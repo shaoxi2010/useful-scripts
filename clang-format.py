@@ -1,5 +1,7 @@
 # 用clang-format格式化文件，通过在文件夹下添加.formatignore文件
 # 可以将同级别目录下的对应文件夹或文件忽略
+# 配置网站 https://clang-format-configurator.site
+
 from subprocess import check_call
 from os import path, walk
 from concurrent.futures import ThreadPoolExecutor
@@ -13,7 +15,7 @@ suffixs = ['.c', '.h', '.cpp', '.hpp']
 def run_clang_fmt(files):
     for file in files:
         print(f"Formatting {file}")
-        check_call(["clang-format", "-i", file])
+        check_call(["/opt/homebrew/opt/llvm/bin/clang-format", "-i", file])
 
 
 def split_list(lst, n):
@@ -38,7 +40,7 @@ if __name__ == "__main__":
                 file_list.append(path.join(root, file))
 
     print("Starting format using mutithread")
+    pool = ThreadPoolExecutor(max_workers=mutithreads)  
     for file_chunk in split_list(file_list, 10):
-        pool = ThreadPoolExecutor(max_workers=mutithreads)   
-        pool.submit(run_clang_fmt, file_list)
+        pool.submit(run_clang_fmt, file_chunk)
     print("format completed")
