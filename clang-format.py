@@ -6,31 +6,29 @@ from subprocess import check_call
 from os import path, walk
 from concurrent.futures import ThreadPoolExecutor
 
-mutithreads = 8
+formattool = "/opt/homebrew/opt/llvm/bin/clang-format"
+mutithreads = 4
 
 pwd = path.abspath(path.dirname(__file__))
 
-suffixs = ['.c', '.h', '.cpp', '.hpp']
-
-def run_clang_fmt(files):
-    for file in files:
-        print(f"Formatting {file}")
-        check_call(["/opt/homebrew/opt/llvm/bin/clang-format", "-i", file])
+suffixs = [".c", ".h", ".cpp", ".hpp"]
 
 
-def split_list(lst, n):
-    return [lst[i : i + n] for i in range(0, len(lst), n)]
+def run_clang_fmt(file):
+    print(f"Formatting {file}")
+    check_call([formattool, "-i", file])
 
 
 def formatignore(ignorefile):
-    with open(ignorefile, 'r') as f:
+    with open(ignorefile, "r") as f:
         return f.read().splitlines()
 
-if __name__ == "__main__":
+
+def get_format_files(root):
     file_list = []
     for root, dirs, files in walk(pwd):
-        if '.formatignore' in files:
-            for entry in formatignore(path.join(root, '.formatignore')):
+        if ".formatignore" in files:
+            for entry in formatignore(path.join(root, ".formatignore")):
                 if path.isdir(path.join(root, entry)):
                     dirs.remove(entry)
                 else:
@@ -38,9 +36,12 @@ if __name__ == "__main__":
         for file in files:
             if file.endswith(tuple(suffixs)):
                 file_list.append(path.join(root, file))
+    return file_list
 
+
+if __name__ == "__main__":
+    file_list = get_format_files(pwd)
     print("Starting format using mutithread")
-    pool = ThreadPoolExecutor(max_workers=mutithreads)  
-    for file_chunk in split_list(file_list, 10):
-        pool.submit(run_clang_fmt, file_chunk)
+    with ThreadPoolExecutor(max_workers=mutithreads) as pool:
+        pool.map(run_clang_fmt, file_list)
     print("format completed")
